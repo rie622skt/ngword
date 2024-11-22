@@ -1,13 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { Message } from '../types';
+import { socketService } from '../services/socketService';
 
 export function GameRoom() {
   const [messageText, setMessageText] = useState('');
   const [newNGWord, setNewNGWord] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   
-  const { currentRoom, currentPlayer, addNGWord, removeNGWord } = useGameStore();
+  const { currentRoom, currentPlayer, addNGWord, removeNGWord, setRoom } = useGameStore();
+
+  useEffect(() => {
+    socketService.onRoomUpdate((updatedRoom) => {
+      setRoom(updatedRoom);
+    });
+
+    socketService.onPlayerJoined((updatedRoom) => {
+      setRoom(updatedRoom);
+    });
+
+    socketService.onGameStart((updatedRoom) => {
+      setRoom(updatedRoom);
+    });
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, [setRoom]);
 
   const handleAddNGWord = () => {
     if (!newNGWord.trim() || !currentPlayer) return;
@@ -56,8 +75,13 @@ export function GameRoom() {
                 onChange={(e) => setNewNGWord(e.target.value)}
                 className="input flex-1"
                 placeholder="NGワードを入力"
+                maxLength={20}
               />
-              <button onClick={handleAddNGWord} className="btn btn-primary">
+              <button 
+                onClick={handleAddNGWord} 
+                className="btn btn-primary"
+                disabled={currentPlayer.ngWords.length >= 3}
+              >
                 追加
               </button>
             </div>
@@ -93,6 +117,7 @@ export function GameRoom() {
                 onChange={(e) => setMessageText(e.target.value)}
                 className="input flex-1"
                 placeholder="メッセージを入力"
+                maxLength={100}
               />
               <button onClick={handleSendMessage} className="btn btn-primary">
                 送信
