@@ -1,4 +1,0 @@
-{
-  "installDependencies": true,
-  "startCommand": "setup-nativescript-stackblitz && ns preview"
-}
